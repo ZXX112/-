@@ -1,0 +1,2467 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5efe4">
+<title>转啊 · 幸运转盘</title>
+<style>
+  :root {
+    --bg: #f5efe4;
+    --surface: #fffcf6;
+    --surface-deep: #fbf4e8;
+    --ink: #27241e;
+    --muted: #7f7768;
+    --line: rgba(39, 36, 30, 0.12);
+    --line-strong: rgba(39, 36, 30, 0.22);
+    --accent: #d95f3b;
+    --accent-dark: #b74728;
+    --accent-soft: #f6d8ca;
+    --green: #657f68;
+    --shadow: 0 28px 70px -38px rgba(65, 45, 20, 0.42);
+    --shadow-soft: 0 18px 42px -30px rgba(65, 45, 20, 0.4);
+    --radius-xl: 36px;
+    --radius-lg: 26px;
+    --radius-md: 18px;
+    --font-sans: "PingFang SC", "Microsoft YaHei", "Noto Sans CJK SC", "Hiragino Sans GB", sans-serif;
+    --font-display: Georgia, "Noto Serif SC", "Source Han Serif SC", "Songti SC", "SimSun", serif;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-width: 320px;
+    min-height: 100vh;
+    color: var(--ink);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    background:
+      radial-gradient(circle at 8% 6%, rgba(238, 172, 125, 0.28), transparent 32%),
+      radial-gradient(circle at 92% 4%, rgba(116, 159, 135, 0.18), transparent 30%),
+      var(--bg);
+  }
+  body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    opacity: 0.28;
+    background-image: radial-gradient(rgba(39, 36, 30, 0.16) 0.7px, transparent 0.7px);
+    background-size: 18px 18px;
+    mask-image: linear-gradient(to bottom, #000 0%, transparent 72%);
+    z-index: -1;
+  }
+  button, input, textarea { font: inherit; }
+  button { color: inherit; }
+  a { color: inherit; }
+  svg { display: block; }
+  [hidden] { display: none !important; }
+
+  .app-shell {
+    width: min(100% - 40px, 1220px);
+    margin: 0 auto;
+  }
+
+  /* ---------- Header ---------- */
+  .topbar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 26px 0 8px;
+  }
+  .brand {
+    display: inline-flex;
+    align-items: center;
+    gap: 12px;
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+    text-align: left;
+  }
+  .brand-mark {
+    position: relative;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 auto;
+    border: 3px solid var(--ink);
+    border-radius: 50%;
+    background: conic-gradient(from -20deg,
+      #f1b36f 0 12.5%, #df7c6c 0 25%, #83ad9a 0 37.5%,
+      #8ea6c5 0 50%, #d3b0d7 0 62.5%, #f2d080 0 75%,
+      #72aaa5 0 87.5%, #e7aa86 0 100%);
+    box-shadow: 0 7px 16px -10px rgba(39, 36, 30, 0.6);
+    transition: transform 0.4s ease;
+  }
+  .brand:hover .brand-mark { transform: rotate(22deg); }
+  .brand-mark::before {
+    content: "";
+    position: absolute;
+    inset: 12px;
+    border-radius: 50%;
+    border: 2px solid var(--ink);
+    background: var(--bg);
+  }
+  .brand-mark::after {
+    content: "";
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    top: 2px;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 50%;
+    background: var(--accent);
+  }
+  .brand-word {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+  }
+  .brand-word strong {
+    font-family: var(--font-display);
+    font-size: 22px;
+    line-height: 1;
+    letter-spacing: 0.02em;
+  }
+  .brand-word small {
+    color: var(--muted);
+    font-size: 9px;
+    font-weight: 700;
+    letter-spacing: 0.2em;
+  }
+  .topbar-actions { display: flex; align-items: center; gap: 10px; }
+
+  /* ---------- Shared controls ---------- */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    min-height: 44px;
+    padding: 11px 20px;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    font-weight: 650;
+    font-size: 14px;
+    line-height: 1.2;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.18s ease, box-shadow 0.18s ease, background 0.18s ease, border-color 0.18s ease, opacity 0.18s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  .btn:hover:not(:disabled) { transform: translateY(-1px); }
+  .btn:active:not(:disabled) { transform: translateY(0); }
+  .btn:focus-visible, .icon-btn:focus-visible, .spin-hub:focus-visible, .text-link:focus-visible, .card-start:focus-visible {
+    outline: 3px solid rgba(217, 95, 59, 0.34);
+    outline-offset: 3px;
+  }
+  .btn:disabled { cursor: not-allowed; opacity: 0.45; }
+  .btn-primary {
+    color: #fffaf3;
+    background: var(--accent);
+    box-shadow: 0 12px 28px -16px rgba(217, 95, 59, 0.85);
+  }
+  .btn-primary:hover:not(:disabled) {
+    background: var(--accent-dark);
+    box-shadow: 0 15px 30px -16px rgba(183, 71, 40, 0.8);
+  }
+  .btn-dark {
+    color: #fffaf3;
+    background: var(--ink);
+    box-shadow: 0 12px 28px -18px rgba(39, 36, 30, 0.85);
+  }
+  .btn-dark:hover:not(:disabled) { background: #100f0c; }
+  .btn-ghost {
+    color: var(--ink);
+    background: rgba(255, 252, 246, 0.45);
+    border-color: var(--line);
+  }
+  .btn-ghost:hover:not(:disabled) { background: var(--surface); border-color: var(--line-strong); }
+  .btn-danger {
+    color: #fffaf3;
+    background: #ad3e2b;
+  }
+  .btn-danger:hover:not(:disabled) { background: #933221; }
+  .btn-danger-ghost {
+    color: #9b3b2a;
+    background: transparent;
+    border-color: rgba(155, 59, 42, 0.22);
+  }
+  .btn-danger-ghost:hover:not(:disabled) { background: rgba(155, 59, 42, 0.07); }
+  .btn-lg { min-height: 52px; padding: 15px 30px; font-size: 15px; }
+  .icon-btn {
+    display: inline-grid;
+    place-items: center;
+    width: 36px;
+    height: 36px;
+    padding: 0;
+    color: var(--muted);
+    background: transparent;
+    border: 1px solid transparent;
+    border-radius: 50%;
+    cursor: pointer;
+    transition: color 0.18s ease, background 0.18s ease, border-color 0.18s ease;
+  }
+  .icon-btn:hover { color: var(--ink); background: var(--surface); border-color: var(--line); }
+  .eyebrow {
+    display: block;
+    margin-bottom: 9px;
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.22em;
+    line-height: 1.2;
+  }
+  .text-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 0 0 4px;
+    color: var(--ink);
+    font-weight: 700;
+    font-size: 14px;
+    background: transparent;
+    border: 0;
+    border-bottom: 1px solid var(--line-strong);
+    cursor: pointer;
+  }
+  .text-link span { color: var(--accent); transition: transform 0.2s ease; }
+  .text-link:hover span { transform: translateX(5px); }
+
+  /* ---------- Library hero ---------- */
+  .view { animation: viewIn 0.45s ease both; }
+  .hero {
+    display: grid;
+    grid-template-columns: minmax(0, 1.05fr) minmax(360px, 0.95fr);
+    align-items: center;
+    gap: clamp(28px, 5vw, 70px);
+    min-height: 500px;
+    padding: 50px 0 68px;
+    border-bottom: 1px solid var(--line);
+  }
+  .hero-copy h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(54px, 7.8vw, 98px);
+    font-weight: 500;
+    line-height: 0.98;
+    letter-spacing: -0.055em;
+  }
+  .hero-copy h1 em {
+    position: relative;
+    display: inline-block;
+    color: var(--accent);
+    font-style: normal;
+  }
+  .hero-copy h1 em::after {
+    content: "";
+    position: absolute;
+    left: 2%;
+    right: 0;
+    bottom: 2px;
+    height: 8px;
+    border-top: 2px solid currentColor;
+    border-radius: 50%;
+    transform: rotate(-2deg);
+    opacity: 0.5;
+  }
+  .hero-copy p {
+    max-width: 480px;
+    margin: 28px 0 24px;
+    color: var(--muted);
+    font-size: 15px;
+    line-height: 1.9;
+  }
+  .hero-art {
+    position: relative;
+    display: grid;
+    place-items: center;
+    min-height: 430px;
+  }
+  .hero-orbit {
+    position: absolute;
+    width: 440px;
+    height: 440px;
+    max-width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+  }
+  .hero-orbit::before,
+  .hero-orbit::after {
+    content: "";
+    position: absolute;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+  }
+  .hero-orbit::before { inset: 22px; border-style: dashed; }
+  .hero-orbit::after { inset: 66px; }
+  .hero-wheel {
+    position: relative;
+    width: min(370px, 33vw);
+    min-width: 280px;
+    aspect-ratio: 1;
+    border: 12px solid var(--ink);
+    border-radius: 50%;
+    background: conic-gradient(from -12deg,
+      #edb374 0 12.5%, #df7c6c 0 25%, #80aa97 0 37.5%,
+      #8ba5c4 0 50%, #d2acd5 0 62.5%, #f0cd7c 0 75%,
+      #6fa7a2 0 87.5%, #e5a782 0 100%);
+    box-shadow: 0 36px 60px -34px rgba(49, 35, 18, 0.58), inset 0 0 0 5px rgba(255, 252, 246, 0.8);
+    transform: rotate(-10deg);
+    animation: slowSpin 34s linear infinite;
+  }
+  .hero-wheel::before {
+    content: "";
+    position: absolute;
+    inset: 20%;
+    border: 3px solid var(--ink);
+    border-radius: 50%;
+    background: var(--bg);
+    box-shadow: inset 0 0 0 10px rgba(255, 252, 246, 0.8);
+  }
+  .hero-wheel::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 18px;
+    height: 18px;
+    border: 3px solid var(--ink);
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+  }
+  .hero-needle {
+    position: absolute;
+    top: 22px;
+    left: 50%;
+    z-index: 2;
+    width: 34px;
+    height: 64px;
+    transform: translateX(-50%) rotate(10deg);
+    transform-origin: 50% 15%;
+    background: var(--accent);
+    clip-path: polygon(50% 100%, 0 18%, 50% 0, 100% 18%);
+    filter: drop-shadow(0 8px 8px rgba(91, 36, 21, 0.2));
+  }
+  .hero-tag {
+    position: absolute;
+    z-index: 3;
+    padding: 9px 15px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 252, 246, 0.92);
+    box-shadow: var(--shadow-soft);
+    font-size: 12px;
+    font-weight: 650;
+    backdrop-filter: blur(8px);
+  }
+  .hero-tag.one { top: 14%; left: -1%; transform: rotate(-6deg); }
+  .hero-tag.two { right: 0; top: 36%; transform: rotate(5deg); }
+  .hero-tag.three { bottom: 15%; left: 6%; transform: rotate(3deg); }
+  .hero-tag .dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    margin-right: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: 1px;
+  }
+
+  /* ---------- Library collection ---------- */
+  .collection { padding: 48px 0 86px; }
+  .section-head {
+    display: flex;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    margin-bottom: 28px;
+  }
+  .section-head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4vw, 42px);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
+  .section-head h2 span {
+    color: var(--muted);
+    font-family: var(--font-sans);
+    font-size: 14px;
+    font-weight: 500;
+    letter-spacing: 0;
+  }
+  .session-note {
+    max-width: 290px;
+    margin: 0 0 5px;
+    padding-left: 14px;
+    border-left: 2px solid var(--accent);
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .wheel-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 22px;
+  }
+  .wheel-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    min-height: 330px;
+    padding: 24px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: var(--radius-xl);
+    background: rgba(255, 252, 246, 0.68);
+    box-shadow: var(--shadow-soft);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, background 0.25s ease;
+    animation: cardIn 0.45s ease both;
+  }
+  .wheel-card::after {
+    content: "";
+    position: absolute;
+    top: -90px;
+    right: -80px;
+    width: 180px;
+    height: 180px;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .wheel-card:hover {
+    transform: translateY(-4px);
+    background: rgba(255, 252, 246, 0.92);
+    box-shadow: 0 26px 56px -30px rgba(65, 45, 20, 0.38);
+  }
+  .card-visual {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    margin-bottom: 22px;
+  }
+  .mini-wheel {
+    position: relative;
+    width: 106px;
+    height: 106px;
+    flex: 0 0 auto;
+    border: 6px solid var(--ink);
+    border-radius: 50%;
+    box-shadow: 0 12px 22px -14px rgba(39, 36, 30, 0.6), inset 0 0 0 2px rgba(255, 252, 246, 0.68);
+    transform: rotate(-9deg);
+    transition: transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .wheel-card:hover .mini-wheel { transform: rotate(8deg); }
+  .mini-wheel::before {
+    content: "";
+    position: absolute;
+    inset: 29%;
+    border: 2px solid var(--ink);
+    border-radius: 50%;
+    background: var(--surface);
+  }
+  .mini-wheel::after {
+    content: "";
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    transform: translate(-50%, -50%);
+  }
+  .card-count {
+    padding: 6px 10px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    color: var(--muted);
+    background: rgba(255, 252, 246, 0.56);
+    font-size: 11px;
+    font-weight: 650;
+    letter-spacing: 0.04em;
+    white-space: nowrap;
+  }
+  .card-title-row {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+  }
+  .card-title-row h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 27px;
+    font-weight: 500;
+    line-height: 1.2;
+    letter-spacing: -0.025em;
+    overflow-wrap: anywhere;
+  }
+  .card-preview {
+    flex: 1;
+    margin: 10px 0 22px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.75;
+    overflow-wrap: anywhere;
+  }
+  .card-start {
+    width: 100%;
+    justify-content: space-between;
+    padding-inline: 20px 16px;
+    margin-top: auto;
+  }
+  .card-start svg { transition: transform 0.2s ease; }
+  .card-start:hover svg { transform: translateX(3px); }
+
+  .empty-state {
+    position: relative;
+    overflow: hidden;
+    padding: 68px 24px;
+    text-align: center;
+    border: 1px dashed var(--line-strong);
+    border-radius: var(--radius-xl);
+    background: rgba(255, 252, 246, 0.42);
+  }
+  .empty-wheel {
+    position: relative;
+    width: 116px;
+    height: 116px;
+    margin: 0 auto 24px;
+    border: 3px dashed var(--line-strong);
+    border-radius: 50%;
+  }
+  .empty-wheel::before {
+    content: "";
+    position: absolute;
+    inset: 34%;
+    border: 2px solid var(--line-strong);
+    border-radius: 50%;
+    background: var(--bg);
+  }
+  .empty-wheel::after {
+    content: "";
+    position: absolute;
+    top: 5px;
+    left: 50%;
+    width: 13px;
+    height: 24px;
+    background: var(--accent);
+    clip-path: polygon(50% 100%, 0 0, 100% 0);
+    transform: translateX(-50%);
+    opacity: 0.7;
+  }
+  .empty-state h3 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 30px;
+    font-weight: 500;
+  }
+  .empty-state p {
+    margin: 12px auto 24px;
+    color: var(--muted);
+    font-size: 14px;
+    line-height: 1.8;
+  }
+  .empty-ideas {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+    margin-top: 24px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .empty-ideas span {
+    padding: 6px 11px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 252, 246, 0.6);
+  }
+
+  /* ---------- Draw view ---------- */
+  .draw-top {
+    display: grid;
+    grid-template-columns: 1fr auto 1fr;
+    align-items: center;
+    gap: 18px;
+    padding: 18px 0 28px;
+  }
+  .draw-top .back-btn { justify-self: start; }
+  .draw-heading { text-align: center; }
+  .draw-heading .eyebrow { margin-bottom: 5px; }
+  .draw-heading h1 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: clamp(27px, 3.2vw, 40px);
+    font-weight: 500;
+    letter-spacing: -0.03em;
+    overflow-wrap: anywhere;
+  }
+  .round-chip {
+    justify-self: end;
+    padding: 8px 14px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: rgba(255, 252, 246, 0.65);
+    color: var(--muted);
+    font-size: 12px;
+    font-weight: 650;
+    white-space: nowrap;
+  }
+  .draw-layout {
+    display: grid;
+    grid-template-columns: minmax(0, 1.55fr) minmax(300px, 0.65fr);
+    gap: 24px;
+    align-items: stretch;
+    padding-bottom: 60px;
+  }
+  .stage-card {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 700px;
+    padding: 42px clamp(20px, 4vw, 52px) 28px;
+    overflow: hidden;
+    border: 1px solid var(--line);
+    border-radius: 42px;
+    background:
+      radial-gradient(circle at 50% 33%, rgba(255, 252, 246, 0.94), rgba(255, 247, 235, 0.45) 54%, transparent 72%),
+      linear-gradient(145deg, rgba(255, 252, 246, 0.72), rgba(247, 238, 224, 0.4));
+    box-shadow: var(--shadow);
+  }
+  .stage-card::before,
+  .stage-card::after {
+    content: "";
+    position: absolute;
+    border: 1px solid var(--line);
+    border-radius: 50%;
+    pointer-events: none;
+  }
+  .stage-card::before { width: 540px; height: 540px; top: -330px; right: -230px; }
+  .stage-card::after { width: 360px; height: 360px; bottom: -280px; left: -180px; border-style: dashed; }
+  .wheel-wrap {
+    position: relative;
+    width: min(100%, 590px);
+    aspect-ratio: 1;
+    isolation: isolate;
+  }
+  #wheelCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    filter: drop-shadow(0 26px 30px rgba(62, 41, 19, 0.2));
+  }
+  .pointer {
+    position: absolute;
+    top: -9px;
+    left: 50%;
+    z-index: 6;
+    width: 42px;
+    height: 58px;
+    transform: translateX(-50%);
+    filter: drop-shadow(0 8px 8px rgba(91, 36, 21, 0.22));
+    pointer-events: none;
+  }
+  .pointer::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background: var(--accent);
+    clip-path: polygon(50% 100%, 0 20%, 50% 0, 100% 20%);
+  }
+  .pointer::after {
+    content: "";
+    position: absolute;
+    top: 9px;
+    left: 50%;
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    background: var(--accent-dark);
+    transform: translateX(-50%);
+  }
+  .spin-hub {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    z-index: 5;
+    display: grid;
+    place-items: center;
+    width: clamp(82px, 17%, 104px);
+    aspect-ratio: 1;
+    padding: 0;
+    border: 4px solid rgba(255, 252, 246, 0.9);
+    border-radius: 50%;
+    color: #fffaf3;
+    background: var(--ink);
+    box-shadow: 0 0 0 1px rgba(39, 36, 30, 0.5), 0 15px 30px -14px rgba(39, 36, 30, 0.7);
+    transform: translate(-50%, -50%);
+    cursor: pointer;
+    transition: background 0.2s ease, transform 0.2s ease, box-shadow 0.2s ease;
+  }
+  .spin-hub::before {
+    content: "";
+    position: absolute;
+    inset: 7px;
+    border: 1px solid rgba(255, 250, 243, 0.26);
+    border-radius: 50%;
+  }
+  .spin-hub span {
+    position: relative;
+    z-index: 1;
+    font-family: var(--font-display);
+    font-size: clamp(17px, 2.8vw, 22px);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+  }
+  .spin-hub:hover:not(:disabled) {
+    background: var(--accent);
+    transform: translate(-50%, -50%) scale(1.055);
+    box-shadow: 0 0 0 1px rgba(183, 71, 40, 0.5), 0 18px 36px -14px rgba(183, 71, 40, 0.72);
+  }
+  .spin-hub:active:not(:disabled) { transform: translate(-50%, -50%) scale(0.98); }
+  .spin-hub:disabled { cursor: not-allowed; }
+  .spin-hub.is-idle { animation: hubPulse 2.8s ease-in-out infinite; }
+  .spin-hub.is-spinning span { animation: blink 0.9s ease-in-out infinite; }
+  .spin-hub.is-disabled { opacity: 0.5; }
+
+  .stage-footer {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    width: 100%;
+    margin-top: 24px;
+  }
+  .stage-hint {
+    width: 100%;
+    margin: 0 0 6px;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.6;
+    text-align: center;
+    min-height: 20px;
+  }
+  .stage-footer .btn-ghost { min-height: 48px; }
+
+  .side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    min-width: 0;
+  }
+  .progress-card,
+  .results-card {
+    border: 1px solid var(--line);
+    border-radius: var(--radius-lg);
+    background: rgba(255, 252, 246, 0.7);
+    box-shadow: var(--shadow-soft);
+    backdrop-filter: blur(8px);
+  }
+  .progress-card { padding: 22px 22px 20px; }
+  .progress-top {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .progress-top strong {
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: 24px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .progress-track {
+    height: 8px;
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: rgba(39, 36, 30, 0.08);
+  }
+  .progress-bar {
+    display: block;
+    width: 0;
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--accent), #e99768);
+    transition: width 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+  }
+  .progress-foot {
+    display: flex;
+    justify-content: space-between;
+    gap: 10px;
+    margin-top: 11px;
+    color: var(--muted);
+    font-size: 11px;
+  }
+  .results-card {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-height: 430px;
+    padding: 22px;
+  }
+  .card-head {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 12px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid var(--line);
+  }
+  .card-head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 25px;
+    font-weight: 500;
+    letter-spacing: -0.02em;
+  }
+  .card-head span { color: var(--muted); font-size: 11px; }
+  .result-list {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    gap: 9px;
+    max-height: 480px;
+    margin: 0;
+    padding: 16px 2px 2px 0;
+    overflow-y: auto;
+    list-style: none;
+    scrollbar-width: thin;
+    scrollbar-color: var(--line-strong) transparent;
+  }
+  .result-item {
+    display: flex;
+    align-items: center;
+    gap: 11px;
+    padding: 11px 12px;
+    border: 1px solid transparent;
+    border-radius: 14px;
+    background: rgba(245, 239, 228, 0.52);
+    animation: itemIn 0.35s ease both;
+  }
+  .result-item.latest {
+    border-color: rgba(217, 95, 59, 0.2);
+    background: rgba(255, 250, 241, 0.95);
+    box-shadow: 0 8px 22px -18px rgba(65, 45, 20, 0.45);
+  }
+  .result-rank {
+    flex: 0 0 auto;
+    width: 26px;
+    color: var(--muted);
+    font-family: var(--font-display);
+    font-size: 17px;
+    line-height: 1;
+  }
+  .result-item.latest .result-rank { color: var(--accent); }
+  .result-color {
+    width: 10px;
+    height: 10px;
+    flex: 0 0 auto;
+    border: 1px solid rgba(39, 36, 30, 0.12);
+    border-radius: 50%;
+  }
+  .result-list-name {
+    flex: 1;
+    min-width: 0;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.45;
+    overflow-wrap: anywhere;
+  }
+  .latest-tag {
+    flex: 0 0 auto;
+    padding: 3px 7px;
+    border-radius: 999px;
+    color: var(--accent-dark);
+    background: var(--accent-soft);
+    font-size: 9px;
+    font-weight: 750;
+  }
+  .results-empty {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 9px;
+    padding: 34px 14px;
+    color: var(--muted);
+    text-align: center;
+    font-size: 12px;
+    line-height: 1.7;
+  }
+  .results-empty-mark {
+    display: grid;
+    place-items: center;
+    width: 42px;
+    height: 42px;
+    margin-bottom: 3px;
+    border: 1px dashed var(--line-strong);
+    border-radius: 50%;
+    font-family: var(--font-display);
+    font-size: 20px;
+    color: var(--accent);
+  }
+  .side-note {
+    margin-top: 16px;
+    padding-top: 14px;
+    border-top: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 10px;
+    line-height: 1.7;
+  }
+
+  /* ---------- Result overlay ---------- */
+  .result-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 12;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    background: rgba(245, 239, 228, 0.4);
+    backdrop-filter: blur(7px);
+    animation: overlayIn 0.3s ease both;
+  }
+  .result-card {
+    position: relative;
+    width: min(82%, 380px);
+    padding: 32px 28px 26px;
+    border: 1px solid var(--line);
+    border-radius: 30px;
+    background: var(--surface);
+    box-shadow: 0 30px 70px -32px rgba(49, 34, 17, 0.52);
+    text-align: center;
+    animation: resultIn 0.48s cubic-bezier(0.2, 0.9, 0.3, 1.15) both;
+  }
+  .result-card::before {
+    content: "";
+    display: block;
+    width: 48px;
+    height: 5px;
+    margin: 0 auto 20px;
+    border-radius: 999px;
+    background: var(--winner-color, var(--accent));
+  }
+  .result-kicker {
+    display: block;
+    color: var(--accent);
+    font-size: 10px;
+    font-weight: 800;
+    letter-spacing: 0.16em;
+  }
+  .result-name {
+    display: block;
+    margin: 12px 0 9px;
+    color: var(--ink);
+    font-family: var(--font-display);
+    font-size: clamp(30px, 4.5vw, 46px);
+    font-weight: 500;
+    line-height: 1.14;
+    letter-spacing: -0.035em;
+    overflow-wrap: anywhere;
+  }
+  .result-sub {
+    margin: 0;
+    color: var(--muted);
+    font-size: 12px;
+    line-height: 1.75;
+  }
+  .result-actions {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 24px;
+  }
+  .result-close {
+    position: absolute;
+    top: 11px;
+    right: 11px;
+    width: 32px;
+    height: 32px;
+  }
+  .result-card.is-complete { padding-top: 36px; }
+  .result-card.is-complete .result-name { font-size: clamp(28px, 3.8vw, 39px); }
+
+  /* ---------- Dialogs ---------- */
+  dialog {
+    width: min(100% - 30px, 580px);
+    max-height: calc(100vh - 40px);
+    margin: auto;
+    padding: 0;
+    overflow: visible;
+    border: 0;
+    background: transparent;
+    color: var(--ink);
+  }
+  dialog::backdrop {
+    background: rgba(35, 30, 23, 0.48);
+    backdrop-filter: blur(6px);
+    animation: backdropIn 0.2s ease both;
+  }
+  .modal {
+    max-height: calc(100vh - 40px);
+    padding: 30px;
+    overflow-y: auto;
+    border: 1px solid rgba(255, 252, 246, 0.48);
+    border-radius: 32px;
+    background: var(--surface);
+    box-shadow: 0 36px 90px -30px rgba(28, 20, 10, 0.55);
+    animation: modalIn 0.28s cubic-bezier(0.2, 0.8, 0.2, 1) both;
+    scrollbar-width: thin;
+  }
+  .modal-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 4px;
+  }
+  .modal-head h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 34px;
+    font-weight: 500;
+    letter-spacing: -0.03em;
+  }
+  .field { display: block; margin-top: 20px; }
+  .field > span {
+    display: flex;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 8px;
+    font-size: 12px;
+    font-weight: 700;
+  }
+  .field > span small {
+    color: var(--muted);
+    font-size: 10px;
+    font-weight: 500;
+  }
+  .field input,
+  .field textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    outline: 0;
+    color: var(--ink);
+    background: var(--surface-deep);
+    transition: border-color 0.18s ease, box-shadow 0.18s ease, background 0.18s ease;
+  }
+  .field input {
+    height: 49px;
+    padding: 0 15px;
+  }
+  .field textarea {
+    min-height: 214px;
+    padding: 14px 15px;
+    line-height: 1.75;
+    resize: vertical;
+  }
+  .field input::placeholder,
+  .field textarea::placeholder { color: #b0a89b; }
+  .field input:focus,
+  .field textarea:focus {
+    border-color: rgba(217, 95, 59, 0.55);
+    background: #fffdf9;
+    box-shadow: 0 0 0 4px rgba(217, 95, 59, 0.1);
+  }
+  .editor-meta {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 14px;
+    min-height: 20px;
+    margin-top: 9px;
+    color: var(--muted);
+    font-size: 10px;
+  }
+  .editor-error {
+    color: #a23c28;
+    font-weight: 650;
+    text-align: right;
+  }
+  .modal-actions {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    margin-top: 26px;
+  }
+  .modal-actions .spacer { flex: 1; }
+  #confirmDialog { width: min(100% - 30px, 460px); }
+  .confirm-modal { max-width: 430px; margin: 0 auto; }
+  .confirm-modal h2 {
+    margin: 0;
+    font-family: var(--font-display);
+    font-size: 29px;
+    font-weight: 500;
+    letter-spacing: -0.025em;
+  }
+  .confirm-modal p {
+    margin: 12px 0 0;
+    color: var(--muted);
+    font-size: 13px;
+    line-height: 1.8;
+  }
+  .confirm-modal .modal-actions { margin-top: 24px; }
+
+  /* ---------- Toast / confetti ---------- */
+  .toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    z-index: 300;
+    max-width: calc(100% - 32px);
+    padding: 12px 18px;
+    border: 1px solid rgba(255, 252, 246, 0.14);
+    border-radius: 999px;
+    color: #fffaf3;
+    background: rgba(39, 36, 30, 0.94);
+    box-shadow: 0 18px 38px -18px rgba(20, 16, 10, 0.65);
+    font-size: 12px;
+    text-align: center;
+    pointer-events: none;
+    opacity: 0;
+    transform: translate(-50%, 14px);
+    transition: opacity 0.22s ease, transform 0.22s ease;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+  #confettiCanvas {
+    position: fixed;
+    inset: 0;
+    z-index: 250;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+  }
+
+  /* ---------- Motion ---------- */
+  @keyframes viewIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+  @keyframes cardIn { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
+  @keyframes itemIn { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  @keyframes slowSpin { to { transform: rotate(350deg); } }
+  @keyframes hubPulse {
+    0%, 100% { box-shadow: 0 0 0 1px rgba(39, 36, 30, 0.5), 0 15px 30px -14px rgba(39, 36, 30, 0.7); }
+    50% { box-shadow: 0 0 0 9px rgba(39, 36, 30, 0), 0 15px 30px -14px rgba(39, 36, 30, 0.7); }
+  }
+  @keyframes blink { 50% { opacity: 0.3; } }
+  @keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes resultIn { from { opacity: 0; transform: scale(0.93) translateY(10px); } to { opacity: 1; transform: none; } }
+  @keyframes modalIn { from { opacity: 0; transform: translateY(16px) scale(0.985); } to { opacity: 1; transform: none; } }
+  @keyframes backdropIn { from { opacity: 0; } to { opacity: 1; } }
+
+  /* ---------- Responsive ---------- */
+  @media (max-width: 1040px) {
+    .hero { grid-template-columns: 1fr 0.85fr; }
+    .hero-art { min-height: 370px; }
+    .hero-wheel { width: 310px; min-width: 250px; }
+    .hero-orbit { width: 370px; height: 370px; }
+    .wheel-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .draw-layout { grid-template-columns: minmax(0, 1.35fr) minmax(280px, 0.65fr); }
+    .stage-card { min-height: 620px; }
+  }
+  @media (max-width: 820px) {
+    .app-shell { width: min(100% - 28px, 720px); }
+    .hero {
+      grid-template-columns: 1fr;
+      min-height: auto;
+      padding: 48px 0 52px;
+      text-align: center;
+    }
+    .hero-copy p { margin-inline: auto; }
+    .hero-art { min-height: 350px; order: -1; }
+    .hero-wheel { width: 280px; min-width: 220px; }
+    .hero-orbit { width: 330px; height: 330px; }
+    .hero-copy h1 { font-size: clamp(52px, 13vw, 82px); }
+    .section-head { align-items: flex-start; flex-direction: column; gap: 14px; }
+    .session-note { max-width: none; }
+    .draw-layout { grid-template-columns: 1fr; }
+    .stage-card { min-height: 0; padding-top: 30px; }
+    .side-panel { display: grid; grid-template-columns: 0.8fr 1.2fr; align-items: stretch; }
+    .results-card { min-height: 360px; }
+  }
+  @media (max-width: 620px) {
+    .topbar { padding-top: 18px; }
+    .brand-word small { display: none; }
+    .brand-word strong { font-size: 20px; }
+    .topbar-actions .btn { padding-inline: 14px; font-size: 12px; }
+    .hero { padding-top: 32px; }
+    .hero-art { min-height: 310px; }
+    .hero-wheel { width: 235px; min-width: 0; border-width: 9px; }
+    .hero-orbit { width: 285px; height: 285px; }
+    .hero-orbit::before { inset: 16px; }
+    .hero-orbit::after { inset: 48px; }
+    .hero-tag { font-size: 10px; padding: 7px 11px; }
+    .hero-tag.one { left: 0; }
+    .hero-tag.two { right: -3px; }
+    .wheel-grid { grid-template-columns: 1fr; }
+    .wheel-card { min-height: 310px; }
+    .draw-top {
+      grid-template-columns: auto 1fr;
+      gap: 12px;
+      padding-top: 8px;
+    }
+    .draw-heading { grid-column: 1 / -1; grid-row: 2; text-align: left; }
+    .round-chip { grid-column: 2; grid-row: 1; }
+    .draw-top .back-btn { grid-column: 1; grid-row: 1; }
+    .stage-card { padding: 22px 14px 20px; border-radius: 30px; }
+    .wheel-wrap { width: 100%; }
+    .stage-footer .btn { flex: 1 1 auto; padding-inline: 14px; font-size: 12px; }
+    .side-panel { grid-template-columns: 1fr; }
+    .results-card { min-height: 340px; }
+    .result-card { width: min(84%, 330px); padding: 28px 21px 22px; }
+    .result-name { font-size: clamp(27px, 8vw, 38px); }
+    .modal { padding: 24px 20px; border-radius: 26px; }
+    .modal-head h2 { font-size: 28px; }
+    .modal-actions { flex-wrap: wrap; }
+    .modal-actions .btn { flex: 1 1 auto; }
+    .modal-actions .spacer { display: none; }
+    .modal-actions #deleteWheelBtn { flex-basis: 100%; order: 3; }
+    .field textarea { min-height: 190px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.001ms !important;
+      animation-iteration-count: 1 !important;
+      scroll-behavior: auto !important;
+      transition-duration: 0.001ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <button class="brand" id="brandBtn" type="button" aria-label="回到我的转盘">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span class="brand-word">
+        <strong>转啊</strong>
+        <small>LUCKY WHEEL</small>
+      </span>
+    </button>
+    <div class="topbar-actions">
+      <button class="btn btn-dark" id="newWheelBtn" type="button">
+        <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="M8 2v12M2 8h12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/>
+        </svg>
+        新建转盘
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <section class="view" id="libraryView">
+      <section class="hero">
+        <div class="hero-copy">
+          <span class="eyebrow">MAKE A CHOICE</span>
+          <h1>把选择<br><em>交给运气。</em></h1>
+          <p>创建任意数量的转盘，每个转盘独立保存。每次进入都是全新一轮，抽过的选项本轮不会再出现。</p>
+          <button class="text-link" id="heroCreate" type="button">创建新的转盘 <span>→</span></button>
+        </div>
+        <div class="hero-art" aria-hidden="true">
+          <div class="hero-orbit"></div>
+          <div class="hero-wheel"></div>
+          <div class="hero-needle"></div>
+          <span class="hero-tag one"><span class="dot"></span>今天吃什么？</span>
+          <span class="hero-tag two">周末去哪里</span>
+          <span class="hero-tag three"><span class="dot"></span>谁来值日</span>
+        </div>
+      </section>
+
+      <section class="collection" aria-labelledby="collectionTitle">
+        <div class="section-head">
+          <div>
+            <span class="eyebrow">YOUR WHEELS</span>
+            <h2 id="collectionTitle">我的转盘 <span id="wheelCount"></span></h2>
+          </div>
+          <p class="session-note">离开转盘后，本轮抽取记录自动清零；重新进入时，所有选项都会回到轮盘。</p>
+        </div>
+
+        <div class="wheel-grid" id="wheelGrid"></div>
+
+        <div class="empty-state" id="emptyState" hidden>
+          <div class="empty-wheel" aria-hidden="true"></div>
+          <h3>还没有转盘</h3>
+          <p>先创建一个，把你正在纠结的选项都放上去。<br>选择困难的时候，就转一下吧。</p>
+          <button class="btn btn-primary btn-lg" id="emptyCreate" type="button">创建第一个转盘</button>
+          <div class="empty-ideas" aria-label="转盘灵感">
+            <span>今天吃什么</span>
+            <span>周末去哪</span>
+            <span>谁来打扫</span>
+            <span>下一部看什么</span>
+          </div>
+        </div>
+      </section>
+    </section>
+
+    <section class="view draw-view" id="drawView" hidden>
+      <div class="draw-top">
+        <button class="btn btn-ghost back-btn" id="backBtn" type="button">
+          <svg width="14" height="14" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+            <path d="M10 3 5 8l5 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+          我的转盘
+        </button>
+        <div class="draw-heading">
+          <span class="eyebrow">NOW SPINNING</span>
+          <h1 id="drawTitle">转盘</h1>
+        </div>
+        <div class="round-chip" id="roundChip">本轮 0 / 0</div>
+      </div>
+
+      <div class="draw-layout">
+        <section class="stage-card" aria-label="转盘抽取区">
+          <div class="wheel-wrap" id="wheelWrap">
+            <canvas id="wheelCanvas" role="img" aria-label="幸运转盘"></canvas>
+            <div class="pointer" aria-hidden="true"></div>
+            <button class="spin-hub" id="spinHub" type="button" aria-label="开始抽取">
+              <span id="spinHubLabel">转</span>
+            </button>
+
+            <div class="result-overlay" id="resultOverlay" hidden>
+              <div class="result-card" id="resultCard" role="status" aria-live="polite">
+                <button class="icon-btn result-close" id="resultClose" type="button" aria-label="关闭结果">
+                  <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                    <path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+                  </svg>
+                </button>
+                <span class="result-kicker" id="resultKicker">抽中了</span>
+                <strong class="result-name" id="resultName"></strong>
+                <p class="result-sub" id="resultSub"></p>
+                <div class="result-actions">
+                  <button class="btn btn-primary" id="resultPrimary" type="button">继续抽取</button>
+                  <button class="btn btn-ghost" id="resultSecondary" type="button" hidden>返回我的转盘</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div class="stage-footer">
+            <p class="stage-hint" id="stageHint">点击中心按钮，看看这次会选中谁。</p>
+            <button class="btn btn-primary btn-lg" id="spinBtn" type="button">开始抽取</button>
+            <button class="btn btn-ghost" id="resetRoundBtn" type="button">重置本轮</button>
+          </div>
+        </section>
+
+        <aside class="side-panel" aria-label="本轮抽取信息">
+          <div class="progress-card">
+            <div class="progress-top">
+              <span>本轮进度</span>
+              <strong id="progressText">0 / 0</strong>
+            </div>
+            <div class="progress-track" aria-hidden="true">
+              <span class="progress-bar" id="progressBar"></span>
+            </div>
+            <div class="progress-foot">
+              <span id="remainingText">剩余 0 个</span>
+              <span id="drawnText">已抽 0 个</span>
+            </div>
+          </div>
+
+          <div class="results-card">
+            <div class="card-head">
+              <h2>抽取记录</h2>
+              <span id="resultCount">0 个</span>
+            </div>
+            <ol class="result-list" id="resultList"></ol>
+            <div class="results-empty" id="resultsEmpty">
+              <span class="results-empty-mark" aria-hidden="true">?</span>
+              <span>每次抽取的结果会按顺序出现在这里。</span>
+            </div>
+            <div class="side-note">本轮已抽中的选项不会再次出现。退出转盘后，本轮记录自动清零。</div>
+          </div>
+        </aside>
+      </div>
+    </section>
+  </main>
+</div>
+
+<dialog id="editorDialog" aria-labelledby="editorTitle">
+  <form class="modal" id="editorForm" novalidate>
+    <div class="modal-head">
+      <div>
+        <span class="eyebrow">DESIGN A WHEEL</span>
+        <h2 id="editorTitle">新建转盘</h2>
+      </div>
+      <button class="icon-btn" id="closeEditorBtn" type="button" aria-label="关闭">
+        <svg width="17" height="17" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <path d="m4 4 8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+        </svg>
+      </button>
+    </div>
+
+    <label class="field">
+      <span>转盘名称</span>
+      <input id="wheelName" name="name" type="text" maxlength="24" autocomplete="off" placeholder="例如：今天吃什么" required>
+    </label>
+
+    <label class="field">
+      <span>选项 <small>每行一个，最多 60 个</small></span>
+      <textarea id="wheelOptions" name="options" rows="9" spellcheck="false" placeholder="火锅&#10;烧烤&#10;日料&#10;麻辣烫&#10;汉堡"></textarea>
+    </label>
+
+    <div class="editor-meta">
+      <span id="optionCount">0 个有效选项</span>
+      <span class="editor-error" id="editorError" role="alert"></span>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-danger-ghost" id="deleteWheelBtn" type="button" hidden>删除转盘</button>
+      <span class="spacer"></span>
+      <button class="btn btn-ghost" id="cancelEditorBtn" type="button">取消</button>
+      <button class="btn btn-primary" type="submit">保存转盘</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="confirmDialog" aria-labelledby="confirmTitle">
+  <div class="modal confirm-modal">
+    <span class="eyebrow">PLEASE CONFIRM</span>
+    <h2 id="confirmTitle">确认操作</h2>
+    <p id="confirmMessage"></p>
+    <div class="modal-actions">
+      <span class="spacer"></span>
+      <button class="btn btn-ghost" id="confirmCancel" type="button">取消</button>
+      <button class="btn btn-danger" id="confirmOk" type="button">确定</button>
+    </div>
+  </div>
+</dialog>
+
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
+<canvas id="confettiCanvas" aria-hidden="true"></canvas>
+
+<script>
+(() => {
+  'use strict';
+
+  const STORAGE_KEY = 'zhuan-a-wheels-v1';
+  const MAX_ITEMS = 60;
+  const MAX_LABEL_LENGTH = 30;
+  const TAU = Math.PI * 2;
+  const COLORS = [
+    '#efb473', '#dd7d6c', '#83ad9a', '#8fa7c5',
+    '#d5afd6', '#f0cd7b', '#73aaa5', '#e5a782',
+    '#b2bc87', '#c7a6d6', '#e9c58d', '#8fb7ce'
+  ];
+  const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+  const state = {
+    wheels: [],
+    activeWheelId: null,
+    remaining: [],
+    drawn: [],
+    phase: 'idle',
+    rotation: 0,
+    animationFrame: null,
+    editingId: null,
+    pendingWinner: null,
+    confirmResolve: null,
+    toastTimer: null
+  };
+
+  const $ = (selector) => document.querySelector(selector);
+  const els = {
+    brandBtn: $('#brandBtn'),
+    newWheelBtn: $('#newWheelBtn'),
+    heroCreate: $('#heroCreate'),
+    emptyCreate: $('#emptyCreate'),
+    wheelGrid: $('#wheelGrid'),
+    wheelCount: $('#wheelCount'),
+    emptyState: $('#emptyState'),
+    libraryView: $('#libraryView'),
+    drawView: $('#drawView'),
+    backBtn: $('#backBtn'),
+    drawTitle: $('#drawTitle'),
+    roundChip: $('#roundChip'),
+    wheelWrap: $('#wheelWrap'),
+    wheelCanvas: $('#wheelCanvas'),
+    spinHub: $('#spinHub'),
+    spinHubLabel: $('#spinHubLabel'),
+    spinBtn: $('#spinBtn'),
+    resetRoundBtn: $('#resetRoundBtn'),
+    stageHint: $('#stageHint'),
+    progressText: $('#progressText'),
+    progressBar: $('#progressBar'),
+    remainingText: $('#remainingText'),
+    drawnText: $('#drawnText'),
+    resultList: $('#resultList'),
+    resultsEmpty: $('#resultsEmpty'),
+    resultCount: $('#resultCount'),
+    resultOverlay: $('#resultOverlay'),
+    resultCard: $('#resultCard'),
+    resultKicker: $('#resultKicker'),
+    resultName: $('#resultName'),
+    resultSub: $('#resultSub'),
+    resultPrimary: $('#resultPrimary'),
+    resultSecondary: $('#resultSecondary'),
+    resultClose: $('#resultClose'),
+    editorDialog: $('#editorDialog'),
+    editorForm: $('#editorForm'),
+    editorTitle: $('#editorTitle'),
+    wheelName: $('#wheelName'),
+    wheelOptions: $('#wheelOptions'),
+    optionCount: $('#optionCount'),
+    editorError: $('#editorError'),
+    deleteWheelBtn: $('#deleteWheelBtn'),
+    closeEditorBtn: $('#closeEditorBtn'),
+    cancelEditorBtn: $('#cancelEditorBtn'),
+    confirmDialog: $('#confirmDialog'),
+    confirmTitle: $('#confirmTitle'),
+    confirmMessage: $('#confirmMessage'),
+    confirmOk: $('#confirmOk'),
+    confirmCancel: $('#confirmCancel'),
+    toast: $('#toast'),
+    confettiCanvas: $('#confettiCanvas')
+  };
+
+  const ctx = els.wheelCanvas.getContext('2d');
+  let canvasSize = 0;
+  let dpr = 1;
+
+  /* ---------- Utilities ---------- */
+  function uid(prefix = 'id') {
+    if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+      return `${prefix}-${window.crypto.randomUUID()}`;
+    }
+    return `${prefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 10)}`;
+  }
+
+  function randomInt(max) {
+    if (max <= 0) return 0;
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const limit = Math.floor(0x100000000 / max) * max;
+      const values = new Uint32Array(1);
+      let value = limit;
+      while (value >= limit) {
+        window.crypto.getRandomValues(values);
+        value = values[0];
+      }
+      return value % max;
+    }
+    return Math.floor(Math.random() * max);
+  }
+
+  function randomFloat() {
+    if (window.crypto && typeof window.crypto.getRandomValues === 'function') {
+      const values = new Uint32Array(1);
+      window.crypto.getRandomValues(values);
+      return values[0] / 0x100000000;
+    }
+    return Math.random();
+  }
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#039;');
+  }
+
+  function colorForIndex(index) {
+    return COLORS[((index % COLORS.length) + COLORS.length) % COLORS.length];
+  }
+
+  function showToast(message) {
+    window.clearTimeout(state.toastTimer);
+    els.toast.textContent = message;
+    els.toast.classList.add('show');
+    state.toastTimer = window.setTimeout(() => {
+      els.toast.classList.remove('show');
+    }, 2400);
+  }
+
+  function normalizeWheel(raw) {
+    if (!raw || typeof raw !== 'object') return null;
+    const name = String(raw.name || '').trim().slice(0, 24);
+    if (!name) return null;
+
+    const seen = new Set();
+    const items = [];
+    const rawItems = Array.isArray(raw.items) ? raw.items : [];
+    for (const rawItem of rawItems) {
+      const text = String(rawItem && typeof rawItem === 'object' ? rawItem.text : rawItem || '')
+        .trim()
+        .replace(/\s+/g, ' ')
+        .slice(0, MAX_LABEL_LENGTH);
+      if (!text) continue;
+      const key = text.toLocaleLowerCase();
+      if (seen.has(key)) continue;
+      seen.add(key);
+      items.push({
+        id: rawItem && typeof rawItem === 'object' && rawItem.id ? String(rawItem.id) : uid('item'),
+        text
+      });
+      if (items.length >= MAX_ITEMS) break;
+    }
+
+    if (items.length < 2) return null;
+    return {
+      id: raw.id ? String(raw.id) : uid('wheel'),
+      name,
+      items,
+      createdAt: Number(raw.createdAt) || Date.now(),
+      updatedAt: Number(raw.updatedAt) || Date.now()
+    };
+  }
+
+  function loadWheels() {
+    try {
+      const raw = localStorage.getItem(STORAGE_KEY);
+      if (!raw) return [];
+      const data = JSON.parse(raw);
+      const source = Array.isArray(data) ? data : (data && Array.isArray(data.wheels) ? data.wheels : []);
+      return source.map(normalizeWheel).filter(Boolean);
+    } catch (error) {
+      console.warn('Unable to read saved wheels:', error);
+      return [];
+    }
+  }
+
+  function saveWheels() {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        version: 1,
+        wheels: state.wheels
+      }));
+      return true;
+    } catch (error) {
+      console.warn('Unable to save wheels:', error);
+      showToast('浏览器未能保存数据，请检查本地存储权限');
+      return false;
+    }
+  }
+
+  function parseOptions(text) {
+    const seen = new Set();
+    const values = [];
+    let duplicates = 0;
+    let blanks = 0;
+
+    String(text).split(/\r?\n/).forEach((line) => {
+      const value = line.trim().replace(/\s+/g, ' ');
+      if (!value) {
+        blanks += 1;
+        return;
+      }
+      const key = value.toLocaleLowerCase();
+      if (seen.has(key)) {
+        duplicates += 1;
+        return;
+      }
+      seen.add(key);
+      values.push(value);
+    });
+
+    return { values, duplicates, blanks };
+  }
+
+  function getActiveWheel() {
+    return state.wheels.find((wheel) => wheel.id === state.activeWheelId) || null;
+  }
+
+  function getColorForItem(wheel, itemId) {
+    const index = wheel.items.findIndex((item) => item.id === itemId);
+    return colorForIndex(index < 0 ? 0 : index);
+  }
+
+  function conicGradient(wheel) {
+    const count = wheel.items.length;
+    const stops = wheel.items.map((item, index) => {
+      const start = (index / count) * 100;
+      const end = ((index + 1) / count) * 100;
+      return `${colorForIndex(index)} ${start.toFixed(3)}% ${end.toFixed(3)}%`;
+    });
+    return `conic-gradient(from -90deg, ${stops.join(', ')})`;
+  }
+
+  /* ---------- Library ---------- */
+  function renderLibrary() {
+    const count = state.wheels.length;
+    els.wheelCount.textContent = count ? `(${count})` : '';
+    els.emptyState.hidden = count > 0;
+    els.wheelGrid.hidden = count === 0;
+    els.wheelGrid.innerHTML = state.wheels.map((wheel, index) => {
+      const previewItems = wheel.items.slice(0, 3).map((item) => escapeHtml(item.text));
+      const preview = wheel.items.length > 3
+        ? `${previewItems.join(' · ')} 等 ${wheel.items.length} 个`
+        : previewItems.join(' · ');
+      return `
+        <article class="wheel-card" data-wheel-id="${escapeHtml(wheel.id)}" style="animation-delay:${Math.min(index * 45, 220)}ms">
+          <div class="card-visual">
+            <div class="mini-wheel" style="background:${conicGradient(wheel)}" aria-hidden="true"></div>
+            <span class="card-count">${wheel.items.length} 个选项</span>
+          </div>
+          <div class="card-title-row">
+            <h3>${escapeHtml(wheel.name)}</h3>
+            <button class="icon-btn" type="button" data-action="edit" aria-label="编辑 ${escapeHtml(wheel.name)}">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+                <path d="M10.7 2.9a1.2 1.2 0 0 1 1.7 0l.7.7a1.2 1.2 0 0 1 0 1.7L5.5 12.9l-3 .7.7-3 7.5-7.7Z" stroke="currentColor" stroke-width="1.25" stroke-linejoin="round"/>
+              </svg>
+            </button>
+          </div>
+          <p class="card-preview">${preview}</p>
+          <button class="btn btn-primary card-start" type="button" data-action="start">
+            <span>开始抽取</span>
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+              <path d="M3 8h10M9 4l4 4-4 4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+          </button>
+        </article>
+      `;
+    }).join('');
+  }
+
+  /* ---------- Editor ---------- */
+  function openEditor(wheelId = null) {
+    const wheel = wheelId ? state.wheels.find((item) => item.id === wheelId) : null;
+    state.editingId = wheel ? wheel.id : null;
+    els.editorTitle.textContent = wheel ? '编辑转盘' : '新建转盘';
+    els.wheelName.value = wheel ? wheel.name : '';
+    els.wheelOptions.value = wheel ? wheel.items.map((item) => item.text).join('\n') : '';
+    els.deleteWheelBtn.hidden = !wheel;
+    els.editorError.textContent = '';
+    updateOptionCount();
+    if (!els.editorDialog.open) els.editorDialog.showModal();
+    window.requestAnimationFrame(() => {
+      els.wheelName.focus();
+      if (wheel) els.wheelName.select();
+    });
+  }
+
+  function closeEditor() {
+    if (els.editorDialog.open) els.editorDialog.close();
+    state.editingId = null;
+  }
+
+  function updateOptionCount() {
+    const parsed = parseOptions(els.wheelOptions.value);
+    let text = `${parsed.values.length} 个有效选项`;
+    if (parsed.duplicates > 0) text += `，已合并 ${parsed.duplicates} 个重复项`;
+    els.optionCount.textContent = text;
+  }
+
+  function handleEditorSubmit(event) {
+    event.preventDefault();
+    const parsed = parseOptions(els.wheelOptions.value);
+    const name = els.wheelName.value.trim().replace(/\s+/g, ' ');
+
+    if (!name) {
+      setEditorError('请给转盘起一个名字。');
+      els.wheelName.focus();
+      return;
+    }
+    if (parsed.values.length < 2) {
+      setEditorError('至少需要 2 个选项才能开始抽取。');
+      els.wheelOptions.focus();
+      return;
+    }
+    if (parsed.values.length > MAX_ITEMS) {
+      setEditorError(`选项最多 ${MAX_ITEMS} 个，请删减一些。`);
+      els.wheelOptions.focus();
+      return;
+    }
+    const tooLong = parsed.values.find((value) => Array.from(value).length > MAX_LABEL_LENGTH);
+    if (tooLong) {
+      setEditorError(`选项“${tooLong.slice(0, 12)}…”太长，最多 ${MAX_LABEL_LENGTH} 个字符。`);
+      els.wheelOptions.focus();
+      return;
+    }
+
+    const now = Date.now();
+    if (state.editingId) {
+      const wheel = state.wheels.find((item) => item.id === state.editingId);
+      if (!wheel) {
+        closeEditor();
+        return;
+      }
+      const oldItems = new Map(wheel.items.map((item) => [item.text, item]));
+      wheel.name = name;
+      wheel.items = parsed.values.map((value) => {
+        const old = oldItems.get(value);
+        return old ? old : { id: uid('item'), text: value };
+      });
+      wheel.updatedAt = now;
+      const saved = saveWheels();
+      closeEditor();
+      renderLibrary();
+      if (saved) showToast('转盘已更新');
+    } else {
+      const wheel = {
+        id: uid('wheel'),
+        name,
+        items: parsed.values.map((value) => ({ id: uid('item'), text: value })),
+        createdAt: now,
+        updatedAt: now
+      };
+      state.wheels.unshift(wheel);
+      const saved = saveWheels();
+      closeEditor();
+      renderLibrary();
+      if (saved) showToast('转盘已创建');
+    }
+    if (parsed.duplicates > 0) {
+      window.setTimeout(() => showToast(`已自动合并 ${parsed.duplicates} 个重复选项`), 1200);
+    }
+  }
+
+  function setEditorError(message) {
+    els.editorError.textContent = message;
+  }
+
+  async function deleteEditingWheel() {
+    const wheel = state.wheels.find((item) => item.id === state.editingId);
+    if (!wheel) return;
+    const confirmed = await askConfirm({
+      title: '删除这个转盘？',
+      message: `「${wheel.name}」及其所有选项将被永久删除，这个操作无法撤销。`,
+      confirmText: '删除',
+      danger: true
+    });
+    if (!confirmed) return;
+    state.wheels = state.wheels.filter((item) => item.id !== wheel.id);
+    const saved = saveWheels();
+    closeEditor();
+    renderLibrary();
+    if (saved) showToast('转盘已删除');
+  }
+
+  /* ---------- Confirm dialog ---------- */
+  function askConfirm({ title, message, confirmText = '确定', danger = false }) {
+    if (state.confirmResolve) {
+      state.confirmResolve(false);
+      state.confirmResolve = null;
+    }
+    els.confirmTitle.textContent = title;
+    els.confirmMessage.textContent = message;
+    els.confirmOk.textContent = confirmText;
+    els.confirmOk.classList.toggle('btn-danger', danger);
+    els.confirmOk.classList.toggle('btn-primary', !danger);
+    if (!els.confirmDialog.open) els.confirmDialog.showModal();
+
+    return new Promise((resolve) => {
+      state.confirmResolve = resolve;
+      window.requestAnimationFrame(() => els.confirmCancel.focus());
+    });
+  }
+
+  function settleConfirm(value) {
+    if (!state.confirmResolve) return;
+    const resolve = state.confirmResolve;
+    state.confirmResolve = null;
+    if (els.confirmDialog.open) els.confirmDialog.close();
+    resolve(value);
+  }
+
+  /* ---------- Draw view ---------- */
+  function openWheel(wheelId) {
+    const wheel = state.wheels.find((item) => item.id === wheelId);
+    if (!wheel) return;
+    cancelSpin();
+    state.activeWheelId = wheel.id;
+    state.remaining = wheel.items.map((item) => ({ ...item }));
+    state.drawn = [];
+    state.phase = 'idle';
+    state.rotation = 0;
+    state.pendingWinner = null;
+    els.drawTitle.textContent = wheel.name;
+    hideResult();
+    els.libraryView.hidden = true;
+    els.drawView.hidden = false;
+    document.title = `${wheel.name} · 转啊`;
+    els.newWheelBtn.hidden = true;
+    updateDrawUI();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+    window.requestAnimationFrame(() => {
+      fitCanvas();
+      els.spinBtn.focus({ preventScroll: true });
+    });
+  }
+
+  function backToLibrary() {
+    if (state.phase === 'spinning') {
+      showToast('转盘正在转动，请稍候');
+      return;
+    }
+    cancelSpin();
+    hideResult();
+    state.activeWheelId = null;
+    state.remaining = [];
+    state.drawn = [];
+    state.phase = 'idle';
+    state.rotation = 0;
+    state.pendingWinner = null;
+    els.drawView.hidden = true;
+    els.libraryView.hidden = false;
+    els.newWheelBtn.hidden = false;
+    document.title = '转啊 · 幸运转盘';
+    renderLibrary();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+
+  function cancelSpin() {
+    if (state.animationFrame !== null) {
+      window.cancelAnimationFrame(state.animationFrame);
+      state.animationFrame = null;
+    }
+    if (state.phase === 'spinning') state.phase = 'idle';
+  }
+
+  function updateDrawUI() {
+    const wheel = getActiveWheel();
+    if (!wheel) return;
+    const total = wheel.items.length;
+    const drawn = state.drawn.length;
+    const remaining = state.remaining.length;
+    const percent = total ? (drawn / total) * 100 : 0;
+
+    els.roundChip.textContent = `本轮 ${drawn} / ${total}`;
+    els.progressText.textContent = `${drawn} / ${total}`;
+    els.progressBar.style.width = `${percent}%`;
+    els.remainingText.textContent = `剩余 ${remaining} 个`;
+    els.drawnText.textContent = `已抽 ${drawn} 个`;
+    els.wheelCanvas.setAttribute('aria-label', `幸运转盘，剩余 ${remaining} 个选项`);
+
+    const busy = state.phase !== 'idle';
+    els.spinBtn.disabled = busy || remaining === 0;
+    els.spinHub.disabled = busy || remaining === 0;
+    els.resetRoundBtn.disabled = state.phase === 'spinning';
+    els.backBtn.disabled = state.phase === 'spinning';
+
+    els.spinHub.classList.toggle('is-idle', state.phase === 'idle' && remaining > 0);
+    els.spinHub.classList.toggle('is-spinning', state.phase === 'spinning');
+    els.spinHub.classList.toggle('is-disabled', remaining === 0);
+
+    if (state.phase === 'spinning') {
+      els.spinHubLabel.textContent = '…';
+      els.spinBtn.textContent = '抽取中';
+      els.stageHint.textContent = '转盘正在转动，结果马上揭晓。';
+    } else if (state.phase === 'result') {
+      els.spinHubLabel.textContent = '转';
+      els.spinBtn.textContent = '开始抽取';
+      els.stageHint.textContent = '结果已揭晓，收下结果后继续抽取。';
+    } else if (state.phase === 'complete') {
+      els.spinHubLabel.textContent = '完';
+      els.spinBtn.textContent = '本轮完成';
+      els.stageHint.textContent = '本轮所有选项都抽完了，再开一轮吧。';
+    } else if (remaining === 0) {
+      els.spinHubLabel.textContent = '完';
+      els.spinBtn.textContent = '本轮完成';
+      els.stageHint.textContent = '本轮所有选项都抽完了，点击「重置本轮」重新开始。';
+    } else if (drawn === 0) {
+      els.spinHubLabel.textContent = '转';
+      els.spinBtn.textContent = '开始抽取';
+      els.stageHint.textContent = '点击中心按钮，看看这次会选中谁。';
+    } else {
+      els.spinHubLabel.textContent = '转';
+      els.spinBtn.textContent = '继续抽取';
+      els.stageHint.textContent = `还剩 ${remaining} 个选项，继续交给运气。`;
+    }
+
+    renderResults();
+    drawWheel();
+  }
+
+  function renderResults() {
+    const wheel = getActiveWheel();
+    if (!wheel) return;
+    const count = state.drawn.length;
+    els.resultCount.textContent = `${count} 个`;
+    els.resultsEmpty.hidden = count > 0;
+    els.resultList.hidden = count === 0;
+
+    if (count === 0) {
+      els.resultList.innerHTML = '';
+      return;
+    }
+
+    els.resultList.innerHTML = state.drawn.slice().reverse().map((item, reverseIndex) => {
+      const rank = count - reverseIndex;
+      const isLatest = reverseIndex === 0;
+      return `
+        <li class="result-item${isLatest ? ' latest' : ''}">
+          <span class="result-rank">${String(rank).padStart(2, '0')}</span>
+          <span class="result-color" style="background:${getColorForItem(wheel, item.id)}" aria-hidden="true"></span>
+          <span class="result-list-name">${escapeHtml(item.text)}</span>
+          ${isLatest ? '<span class="latest-tag">最新</span>' : ''}
+        </li>
+      `;
+    }).join('');
+  }
+
+  function fitCanvas() {
+    if (els.drawView.hidden) return;
+    const rect = els.wheelWrap.getBoundingClientRect();
+    const size = Math.max(1, Math.round(rect.width));
+    dpr = Math.min(2.5, window.devicePixelRatio || 1);
+    if (els.wheelCanvas.width !== Math.round(size * dpr) || els.wheelCanvas.height !== Math.round(size * dpr)) {
+      els.wheelCanvas.width = Math.round(size * dpr);
+      els.wheelCanvas.height = Math.round(size * dpr);
+    }
+    canvasSize = size;
+    drawWheel();
+  }
+
+  function drawWheel() {
+    if (!canvasSize) return;
+    const size = canvasSize;
+    const center = size / 2;
+    const radius = Math.max(40, size / 2 - size * 0.055);
+
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, size, size);
+
+    // Outer rim.
+    ctx.beginPath();
+    ctx.arc(center, center, radius + size * 0.025, 0, TAU);
+    ctx.fillStyle = '#27241e';
+    ctx.fill();
+
+    ctx.beginPath();
+    ctx.arc(center, center, radius + size * 0.010, 0, TAU);
+    ctx.fillStyle = '#fffaf0';
+    ctx.fill();
+
+    const items = state.remaining;
+    const wheel = getActiveWheel();
+    if (!wheel) return;
+
+    if (!items.length) {
+      ctx.beginPath();
+      ctx.arc(center, center, radius, 0, TAU);
+      ctx.fillStyle = '#f5efe4';
+      ctx.fill();
+      ctx.setLineDash([7, 9]);
+      ctx.lineWidth = 1.5;
+      ctx.strokeStyle = 'rgba(39, 36, 30, 0.26)';
+      ctx.beginPath();
+      ctx.arc(center, center, radius * 0.78, 0, TAU);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.fillStyle = '#7f7768';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `500 ${Math.max(15, size * 0.036)}px ${getComputedStyle(document.body).fontFamily}`;
+      ctx.fillText('本轮已全部抽完', center, center);
+      return;
+    }
+
+    const count = items.length;
+    const arc = TAU / count;
+    const startBase = -Math.PI / 2 + state.rotation;
+
+    for (let index = 0; index < count; index += 1) {
+      const item = items[index];
+      const originalIndex = wheel.items.findIndex((entry) => entry.id === item.id);
+      const start = startBase + index * arc;
+      const end = start + arc;
+      const color = colorForIndex(originalIndex < 0 ? index : originalIndex);
+
+      ctx.beginPath();
+      ctx.moveTo(center, center);
+      ctx.arc(center, center, radius, start, end);
+      ctx.closePath();
+      ctx.fillStyle = color;
+      ctx.fill();
+      ctx.lineWidth = Math.max(1.5, size * 0.004);
+      ctx.strokeStyle = 'rgba(255, 250, 240, 0.86)';
+      ctx.stroke();
+    }
+
+    // A subtle inner vignette keeps labels readable.
+    const vignette = ctx.createRadialGradient(center, center, radius * 0.2, center, center, radius);
+    vignette.addColorStop(0, 'rgba(255, 255, 255, 0.08)');
+    vignette.addColorStop(0.72, 'rgba(255, 255, 255, 0)');
+    vignette.addColorStop(1, 'rgba(52, 39, 21, 0.13)');
+    ctx.beginPath();
+    ctx.arc(center, center, radius, 0, TAU);
+    ctx.fillStyle = vignette;
+    ctx.fill();
+
+    drawLabels(items, wheel, arc, startBase, center, radius, size);
+
+    // Outer ring detail.
+    ctx.beginPath();
+    ctx.arc(center, center, radius + size * 0.004, 0, TAU);
+    ctx.lineWidth = Math.max(1, size * 0.0035);
+    ctx.strokeStyle = 'rgba(39, 36, 30, 0.3)';
+    ctx.stroke();
+  }
+
+  function drawLabels(items, wheel, arc, startBase, center, radius, size) {
+    const count = items.length;
+    const fontSize = Math.max(
+      size < 420 ? 9 : 11,
+      Math.min(21, size * (count <= 6 ? 0.040 : count <= 10 ? 0.034 : count <= 16 ? 0.028 : 0.023))
+    );
+    const fontFamily = getComputedStyle(document.body).fontFamily;
+    ctx.font = `650 ${fontSize}px ${fontFamily}`;
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#27241e';
+
+    const maxWidth = radius * 0.56;
+
+    for (let index = 0; index < count; index += 1) {
+      const item = items[index];
+      const mid = startBase + index * arc + arc / 2;
+      const normalized = ((mid % TAU) + TAU) % TAU;
+      const flip = normalized > Math.PI / 2 && normalized < Math.PI * 1.5;
+      const label = truncateLabel(item.text, maxWidth);
+
+      ctx.save();
+      ctx.translate(center, center);
+      if (flip) {
+        ctx.rotate(mid + Math.PI);
+        ctx.textAlign = 'left';
+        ctx.fillText(label, -radius * 0.84, 0);
+      } else {
+        ctx.rotate(mid);
+        ctx.textAlign = 'right';
+        ctx.fillText(label, radius * 0.84, 0);
+      }
+      ctx.restore();
+    }
+  }
+
+  function truncateLabel(text, maxWidth) {
+    if (ctx.measureText(text).width <= maxWidth) return text;
+    let result = text;
+    while (result.length > 1 && ctx.measureText(`${result}…`).width > maxWidth) {
+      result = result.slice(0, -1);
+    }
+    return `${result}…`;
+  }
+
+  async function spin() {
+    if (state.phase !== 'idle' || state.remaining.length === 0) return;
+    const wheel = getActiveWheel();
+    if (!wheel) return;
+
+    const count = state.remaining.length;
+    const winnerIndex = randomInt(count);
+    const winner = state.remaining[winnerIndex];
+    const arc = TAU / count;
+    const jitter = (randomFloat() - 0.5) * arc * 0.54;
+    const targetModulo = -winnerIndex * arc - arc / 2 + jitter;
+    const currentModulo = ((state.rotation % TAU) + TAU) % TAU;
+    const targetNormalized = ((targetModulo % TAU) + TAU) % TAU;
+    let delta = targetNormalized - currentModulo;
+    if (delta < 0) delta += TAU;
+    const turns = 6 + randomInt(2);
+    const endRotation = state.rotation + turns * TAU + delta;
+    const startRotation = state.rotation;
+    const duration = reducedMotion.matches ? 1200 : 4700;
+
+    state.phase = 'spinning';
+    state.pendingWinner = winner;
+    state.selectedIndex = winnerIndex;
+    updateDrawUI();
+
+    await new Promise((resolve) => {
+      const startTime = performance.now();
+      const animate = (now) => {
+        if (state.phase !== 'spinning') {
+          resolve();
+          return;
+        }
+        const progress = Math.min(1, (now - startTime) / duration);
+        const eased = 1 - Math.pow(1 - progress, 4);
+        state.rotation = startRotation + (endRotation - startRotation) * eased;
+        drawWheel();
+        if (progress < 1) {
+          state.animationFrame = window.requestAnimationFrame(animate);
+        } else {
+          state.rotation = ((endRotation % TAU) + TAU) % TAU;
+          state.animationFrame = null;
+          drawWheel();
+          resolve();
+        }
+      };
+      state.animationFrame = window.requestAnimationFrame(animate);
+    });
+
+    if (state.phase !== 'spinning') return;
+
+    // Let the wheel rest for a beat before revealing the result.
+    if (!reducedMotion.matches) {
+      await new Promise((resolve) => window.setTimeout(resolve, 260));
+      if (state.phase !== 'spinning') return;
+    }
+
+    // Commit the result. Re-render behind the result card, then reveal it.
+    state.phase = 'idle';
+    state.drawn.push({ id: winner.id, text: winner.text });
+    state.remaining = state.remaining.filter((item) => item.id !== winner.id);
+    state.rotation = 0;
+    state.pendingWinner = null;
+    state.phase = state.remaining.length === 0 ? 'complete' : 'result';
+    updateDrawUI();
+    showResult(winner);
+  }
+
+  function showResult(winner) {
+    const wheel = getActiveWheel();
+    if (!wheel) return;
+    const isComplete = state.remaining.length === 0;
+    const order = state.drawn.length;
+
+    els.resultCard.style.setProperty('--winner-color', getColorForItem(wheel, winner.id));
+    els.resultCard.classList.toggle('is-complete', isComplete);
+    els.resultOverlay.hidden = false;
+
+    if (isComplete) {
+      els.resultKicker.textContent = '本轮完成';
+      els.resultName.textContent = `全部 ${wheel.items.length} 个都抽完了`;
+      els.resultSub.textContent = `最后一个被抽中的是「${winner.text}」。退出重进后，所有选项都会重新回到转盘。`;
+      els.resultPrimary.textContent = '再来一轮';
+      els.resultSecondary.hidden = false;
+      els.resultClose.hidden = true;
+      fireConfetti();
+    } else {
+      els.resultKicker.textContent = `第 ${String(order).padStart(2, '0')} 个被选中`;
+      els.resultName.textContent = winner.text;
+      els.resultSub.textContent = `还剩 ${state.remaining.length} 个选项 · 本轮不会重复`;
+      els.resultPrimary.textContent = '继续抽取';
+      els.resultSecondary.hidden = true;
+      els.resultClose.hidden = false;
+    }
+
+    window.requestAnimationFrame(() => els.resultPrimary.focus({ preventScroll: true }));
+  }
+
+  function hideResult() {
+    els.resultOverlay.hidden = true;
+  }
+
+  function handleResultPrimary() {
+    if (state.phase === 'complete') {
+      hideResult();
+      resetRound(false);
+      els.spinBtn.focus({ preventScroll: true });
+      return;
+    }
+    hideResult();
+    state.phase = 'idle';
+    updateDrawUI();
+    if (state.remaining.length > 0) spin();
+  }
+
+  function handleResultClose() {
+    hideResult();
+    state.phase = 'idle';
+    updateDrawUI();
+    els.spinBtn.focus({ preventScroll: true });
+  }
+
+  async function resetRound(ask = true) {
+    if (!getActiveWheel() || state.phase === 'spinning') return;
+    if (ask) {
+      const confirmed = await askConfirm({
+        title: '重新开始本轮？',
+        message: '本轮抽取记录将全部清空，所有选项都会回到轮盘上。',
+        confirmText: '重新开始',
+        danger: false
+      });
+      if (!confirmed) return;
+    }
+    const wheel = getActiveWheel();
+    hideResult();
+    state.remaining = wheel.items.map((item) => ({ ...item }));
+    state.drawn = [];
+    state.phase = 'idle';
+    state.rotation = 0;
+    state.pendingWinner = null;
+    updateDrawUI();
+    if (ask) showToast('已重新开始本轮');
+  }
+
+  /* ---------- Confetti ---------- */
+  const confettiCtx = els.confettiCanvas.getContext('2d');
+  let confettiFrame = null;
+  let confettiParticles = [];
+
+  function resizeConfetti() {
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const ratio = Math.min(2, window.devicePixelRatio || 1);
+    els.confettiCanvas.width = Math.round(width * ratio);
+    els.confettiCanvas.height = Math.round(height * ratio);
+    confettiCtx.setTransform(ratio, 0, 0, ratio, 0, 0);
+  }
+
+  function fireConfetti() {
+    if (reducedMotion.matches) return;
+    resizeConfetti();
+    const width = window.innerWidth;
+    const height = window.innerHeight;
+    const colors = ['#d95f3b', '#efb473', '#83ad9a', '#8fa7c5', '#d5afd6', '#f0cd7b'];
+    confettiParticles = Array.from({ length: 70 }, () => ({
+      x: width * (0.2 + randomFloat() * 0.6),
+      y: -20 - randomFloat() * 120,
+      vx: (randomFloat() - 0.5) * 3.6,
+      vy: 2.2 + randomFloat() * 3.8,
+      gravity: 0.055 + randomFloat() * 0.045,
+      drag: 0.992,
+      size: 5 + randomFloat() * 7,
+      rotation: randomFloat() * TAU,
+      rotationSpeed: (randomFloat() - 0.5) * 0.24,
+      color: colors[randomInt(colors.length)],
+      shape: randomInt(2),
+      life: 0
+    }));
+    const start = performance.now();
+    if (confettiFrame !== null) window.cancelAnimationFrame(confettiFrame);
+
+    const animate = (now) => {
+      const elapsed = now - start;
+      confettiCtx.clearRect(0, 0, width, height);
+      let alive = 0;
+      for (const particle of confettiParticles) {
+        particle.vx *= particle.drag;
+        particle.vy = particle.vy * particle.drag + particle.gravity;
+        particle.x += particle.vx;
+        particle.y += particle.vy;
+        particle.rotation += particle.rotationSpeed;
+        particle.life += 1;
+        if (particle.y < height + 30 && particle.life < 280) alive += 1;
+        confettiCtx.save();
+        confettiCtx.translate(particle.x, particle.y);
+        confettiCtx.rotate(particle.rotation);
+        confettiCtx.globalAlpha = Math.max(0, Math.min(1, (280 - particle.life) / 70));
+        confettiCtx.fillStyle = particle.color;
+        if (particle.shape === 0) {
+          confettiCtx.fillRect(-particle.size / 2, -particle.size / 4, particle.size, particle.size / 2);
+        } else {
+          confettiCtx.beginPath();
+          confettiCtx.arc(0, 0, particle.size / 2.5, 0, TAU);
+          confettiCtx.fill();
+        }
+        confettiCtx.restore();
+      }
+      if (alive > 0 && elapsed < 5000) {
+        confettiFrame = window.requestAnimationFrame(animate);
+      } else {
+        confettiCtx.clearRect(0, 0, width, height);
+        confettiFrame = null;
+      }
+    };
+    confettiFrame = window.requestAnimationFrame(animate);
+  }
+
+  /* ---------- Event wiring ---------- */
+  els.brandBtn.addEventListener('click', () => {
+    if (!els.drawView.hidden) backToLibrary();
+    else window.scrollTo({ top: 0, behavior: 'smooth' });
+  });
+
+  els.newWheelBtn.addEventListener('click', () => openEditor());
+  els.heroCreate.addEventListener('click', () => openEditor());
+  els.emptyCreate.addEventListener('click', () => openEditor());
+
+  els.wheelGrid.addEventListener('click', (event) => {
+    const actionButton = event.target.closest('[data-action]');
+    if (!actionButton) return;
+    const card = actionButton.closest('[data-wheel-id]');
+    if (!card) return;
+    const wheelId = card.getAttribute('data-wheel-id');
+    if (actionButton.getAttribute('data-action') === 'edit') {
+      openEditor(wheelId);
+    } else if (actionButton.getAttribute('data-action') === 'start') {
+      openWheel(wheelId);
+    }
+  });
+
+  els.backBtn.addEventListener('click', backToLibrary);
+  els.spinBtn.addEventListener('click', spin);
+  els.spinHub.addEventListener('click', spin);
+  els.resetRoundBtn.addEventListener('click', () => resetRound(true));
+  els.resultPrimary.addEventListener('click', handleResultPrimary);
+  els.resultSecondary.addEventListener('click', backToLibrary);
+  els.resultClose.addEventListener('click', handleResultClose);
+
+  els.editorForm.addEventListener('submit', handleEditorSubmit);
+  els.wheelOptions.addEventListener('input', () => {
+    setEditorError('');
+    updateOptionCount();
+  });
+  els.wheelName.addEventListener('input', () => setEditorError(''));
+  els.closeEditorBtn.addEventListener('click', closeEditor);
+  els.cancelEditorBtn.addEventListener('click', closeEditor);
+  els.deleteWheelBtn.addEventListener('click', deleteEditingWheel);
+  els.editorDialog.addEventListener('click', (event) => {
+    if (event.target === els.editorDialog) closeEditor();
+  });
+  els.editorDialog.addEventListener('close', () => {
+    state.editingId = null;
+  });
+
+  els.confirmOk.addEventListener('click', () => settleConfirm(true));
+  els.confirmCancel.addEventListener('click', () => settleConfirm(false));
+  els.confirmDialog.addEventListener('cancel', (event) => {
+    event.preventDefault();
+    settleConfirm(false);
+  });
+  els.confirmDialog.addEventListener('click', (event) => {
+    if (event.target === els.confirmDialog) settleConfirm(false);
+  });
+
+  window.addEventListener('resize', () => {
+    if (!els.drawView.hidden) fitCanvas();
+    resizeConfetti();
+  });
+
+  // If the page is restored from the browser's back/forward cache, treat it as
+  // a fresh visit so a previous round's record never survives leaving the app.
+  window.addEventListener('pageshow', (event) => {
+    if (!event.persisted) return;
+    cancelSpin();
+    hideResult();
+    state.activeWheelId = null;
+    state.remaining = [];
+    state.drawn = [];
+    state.phase = 'idle';
+    state.rotation = 0;
+    state.pendingWinner = null;
+    els.drawView.hidden = true;
+    els.libraryView.hidden = false;
+    els.newWheelBtn.hidden = false;
+    document.title = '转啊 · 幸运转盘';
+    renderLibrary();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  });
+
+  if ('ResizeObserver' in window) {
+    const observer = new ResizeObserver(() => {
+      if (!els.drawView.hidden) fitCanvas();
+    });
+    observer.observe(els.wheelWrap);
+  }
+
+  reducedMotion.addEventListener?.('change', () => {
+    // The next spin uses the updated motion preference automatically.
+  });
+
+  /* ---------- Init ---------- */
+  state.wheels = loadWheels();
+  resizeConfetti();
+  renderLibrary();
+})();
+</script>
+</body>
+</html>
